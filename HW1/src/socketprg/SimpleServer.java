@@ -23,15 +23,20 @@ public class SimpleServer {
 	
 				BufferedReader r = new BufferedReader(new InputStreamReader(
 						cs.getInputStream()));
-				String line = r.readLine();
-				System.out.println("Received: " + line);
+				// String line = r.readLine();
+				// System.out.println("Received: " + line);
 				
-				String line2 = line.toUpperCase();
-				PrintStream pw = new PrintStream(cs.getOutputStream());
-				pw.println(line2);
+				String line;
+				while ((line = r.readLine()) != null) {
+					System.out.println("Received: " + line);
+					
+					String line2 = line.toUpperCase();
+					PrintStream pw = new PrintStream(cs.getOutputStream());
+					pw.println(line2);
+				}
 				
 				System.out.println("Client disconnected");
-				pw.close();
+				//pw.close();
 				r.close();
 			}
 		} catch (IOException e) {

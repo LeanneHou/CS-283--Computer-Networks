@@ -29,14 +29,17 @@ public class ClientThread extends Thread {
 			BufferedReader r = new BufferedReader(new InputStreamReader(
 					serverSocket.getInputStream()));
 			
-			pw.println("hello world");
+			for (int i=0; i<100; i++) {
+				pw.println("hello world");
 			
-			String line = r.readLine();
-			System.out.println("CLIENT THREAD "  + Thread.currentThread().getId()
-					+" received: " + line);			
-			//serverSocket.shutdownOutput();
+				//String line = 
+						r.readLine();
+				// System.out.println("CLIENT THREAD "  + Thread.currentThread().getId()
+					// +" received: " + line);			
+				//serverSocket.shutdownOutput();
+			}
 
-			System.out.println("CLIENT THREAD " + Thread.currentThread().getId()
+				System.out.println("CLIENT THREAD " + Thread.currentThread().getId()
 					+ " disconnected");
 			
 			r.close();

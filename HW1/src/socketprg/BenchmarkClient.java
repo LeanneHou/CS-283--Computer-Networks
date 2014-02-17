@@ -6,7 +6,7 @@ import java.net.Socket;
 public class BenchmarkClient {
 
 	
-	private static final int N = 1000;
+	private static final int N = 100;
 	
 	public static void main(String[] args){
 
