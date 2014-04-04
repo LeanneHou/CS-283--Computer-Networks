@@ -24,7 +24,7 @@ import android.util.Log;
 
 public class MyBoundService extends Service{
 
-	private IBinder myBinder;
+	private IBinder myBinder = new MyBinder();
 	Messenger myMessenger;
 	int clientID;
 
@@ -62,14 +62,11 @@ public class MyBoundService extends Service{
 			
 			String[] parts = payload.split(",");
 			
-			if (parts[0].startsWith("ack=")) {
+			if (parts[0].startsWith("ack_id=")) {
 				ack = Integer.parseInt(parts[0].split("=")[1]);
-				Log.d("MyBoundService", "Ack received: " + clientID); 
+				Log.d("MyBoundService", "Ack received: " + ack); 
 				
 				if (parts[1].startsWith("id=")) {
-					
-					// connected to the server, got client ID #
-					Log.d("MyBoundService", "ClientID received: " + clientID); 
 					
 					onConnect(ack, parts[1]);
 					return;
@@ -100,7 +97,7 @@ public class MyBoundService extends Service{
 				String ack = parts[0].split("=")[1];
 				
 				if (ackToTimer.containsKey(ack)){
-					ackToTimer.get(payload).cancel();
+					ackToTimer.get(ack).cancel();
 					ackToTimer.remove(ack);
 				}
 				
@@ -128,6 +125,8 @@ public class MyBoundService extends Service{
 			
 			String temp= payload.split("=")[1]; // get client ID
 			clientID = Integer.parseInt(temp);
+			
+			Log.d("MyBoundService", "onConnect: ClientID received: " + clientID); 
 			
 			// tell the main activity that it's connected
 			Message m = Message.obtain();
@@ -218,6 +217,7 @@ public class MyBoundService extends Service{
 	
 	public class MyBinder extends Binder {
 		public MyBoundService getService (){
+			Log.i("MyBoundService", "getService"); 
 			return MyBoundService.this;
 		}
 	}
@@ -225,43 +225,53 @@ public class MyBoundService extends Service{
 	@Override
 	public IBinder onBind(Intent intent) {
 		// TODO Auto-generated method stub
+		Log.i("MyBoundService", "onBind"); 
 		return myBinder;
 	}
 	
 	public void start() {
-		try {		
-			Log.d("MyBoundService", "start"); 
-			socket = new DatagramSocket();
-			connect(socket);
-			
-			while (true) {
-				byte[] buf = new byte[MAX_PACKET_SIZE];
-				DatagramPacket packet = new DatagramPacket(buf, buf.length);
-				
-				socket.receive(packet);
-				
-				WorkerThread t = new WorkerThread(packet, socket);
-				t.start();
-				
-				threadList.add(t);
-			}
-		} catch (IOException e) {
-			// we jump out here if there's an error, or if the worker thread (or
-			// someone else) closed the socket
-			for (WorkerThread s: threadList) {
-					try {
-						s.join();
-					} catch (InterruptedException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
+		
+		Thread t = new Thread() { 
+	        public void run() {
+	            try {		
+					Log.d("MyBoundService", "start"); 
+					socket = new DatagramSocket();
+					connect(socket);
+					
+					while (true) {
+						byte[] buf = new byte[MAX_PACKET_SIZE];
+						DatagramPacket packet = new DatagramPacket(buf, buf.length);
+						
+						socket.receive(packet);
+						
+						WorkerThread t = new WorkerThread(packet, socket);
+						t.start();
+						
+						threadList.add(t);
 					}
-			}
-			
-			e.printStackTrace();
-		} finally {
-			if (socket != null && !socket.isClosed())
-				socket.close();
-		}
+				} catch (IOException e) {
+					// we jump out here if there's an error, or if the worker thread (or
+					// someone else) closed the socket
+					for (WorkerThread s: threadList) {
+							try {
+								s.join();
+							} catch (InterruptedException e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+							}
+					}
+					
+					e.printStackTrace();
+				} finally {
+					if (socket != null && !socket.isClosed())
+						socket.close();
+				}
+	        }
+	    };
+	    t.start();
+	    
+	    
+
 	}
 	
 	private void connect(final DatagramSocket socket) {
@@ -286,7 +296,7 @@ public class MyBoundService extends Service{
 	
 	public void move(int row, int col) {
 		// send the message to the server
-		String payload = ",client_id=" + clientID + ",row=" + row + ",col=" + col;
+		String payload = "client_id=" + clientID + ",row=" + row + ",col=" + col;
 		Log.d("MyBoundService", "Send move: " + payload); 
 		
 		try {
@@ -299,30 +309,38 @@ public class MyBoundService extends Service{
 
 	
 	// wrap a string in a UDP packt and send it
-	public void sendMsg(String payload, InetAddress address, int port)
+	public void sendMsg(String str1, InetAddress address1, int port1)
 			throws IOException {
-
-		int ackNum = (int) (Math.random() * MyBoundService.RANDOM_NUM_RANGE );
-		final String ack = "" + ackNum;
-		payload = "ack_id=" + ack + "," + payload;
-		Log.d("MyBoundService", "Send Message: " + payload); 
+		final String str = str1;
+		//final InetAddress address = address1;
+		//final int port = port1;
 		
-		final DatagramPacket txPacket = new DatagramPacket(payload.getBytes(),
-				payload.length(), address, port);
-		
-		final Timer timer = new Timer();
-		MyBoundService.ackToTimer.put(ack, timer);
+		Thread t = new Thread() { 
+	        public void run() {
+	            int ackNum = (int) (Math.random() * MyBoundService.RANDOM_NUM_RANGE );
+				String ack = "" + ackNum;
+				final String payload = "ack_id=" + ack + "," + str;
+				Log.d("MyBoundService", "Send Message: " + payload); 
+				
+				Timer timer = new Timer();
+				MyBoundService.ackToTimer.put(ack, timer);
 
-		timer.scheduleAtFixedRate(new TimerTask() {
-			  @Override
-			  public void run() {
-					try {
-						socket.send(txPacket);
-					} catch (IOException e) {
-						e.printStackTrace();
-					}	
-			  }
-			}, 0, (long) ((1/12)*60*1000)); ///TEST 3*60*1000);
+				Log.d("MyBoundService", "created new timer");
+				timer.scheduleAtFixedRate(new TimerTask() {
+					  @Override
+					  public void run() {
+							try {
+								DatagramPacket txPacket = new DatagramPacket(payload.getBytes(),
+										payload.length(), serverSocketAddress);
+								socket.send(txPacket);
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+					  }
+					}, 0, (long) ((0.2)*60*1000)); ///TEST 3*60*1000);
+	        }
+	    };
+	    t.start();	
 	}
 	
 	public void passMessenger(Messenger temp){

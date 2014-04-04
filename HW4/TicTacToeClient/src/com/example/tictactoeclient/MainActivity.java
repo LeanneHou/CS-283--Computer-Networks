@@ -25,8 +25,8 @@ public class MainActivity extends Activity {
 	boolean isBound = false;
 	MyBoundService myService;
 	int ourNum; // the random number we generated to determine who goes first
-	String ourSymbol; // O or X
-	String opponentsSymbol; // O or X
+	String ourSymbol = "X"; // O or X
+	String opponentsSymbol = "O"; // O or X
 	
 	TextView text;
 	Button button1;
@@ -182,12 +182,6 @@ public class MainActivity extends Activity {
 		button8 = (Button) findViewById(R.id.button8);
 		button9 = (Button) findViewById(R.id.button9);
 		start = (Button) findViewById(R.id.button10);
-	}
-
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		// Inflate the menu; this adds items to the action bar if it is present.
-		getMenuInflater().inflate(R.menu.main, menu);
 		
 		button1.setOnClickListener(new OnClickListener(){
 
@@ -282,16 +276,21 @@ public class MainActivity extends Activity {
 				myService.start();
 			}	
 		});	
-		
+	}
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		// Inflate the menu; this adds items to the action bar if it is present.
+		getMenuInflater().inflate(R.menu.main, menu);
 		return true;
 	}
 	
 	@Override
 	public void onStart() {
-		Log.i("MainActivity","onStart");
 		super.onStart();
 		Intent intent = new Intent(this, MyBoundService.class);
 		bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+		Log.e("MainActivity","onStart");
 	}
 	
 	@Override
@@ -307,8 +306,7 @@ public class MainActivity extends Activity {
 
 		@Override
 		public void onServiceConnected(ComponentName arg0, IBinder arg1) {
-			// TODO Auto-generated method stub
-			Log.i("MainActivity","onServiceConnected");
+			Log.e("MainActivity","onServiceConnected");
 			MyBoundService.MyBinder binder = (MyBoundService.MyBinder) arg1;
 			myService = binder.getService();
 			myService.passMessenger(myMessenger);
