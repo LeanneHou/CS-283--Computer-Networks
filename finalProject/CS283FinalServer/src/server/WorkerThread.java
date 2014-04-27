@@ -69,6 +69,8 @@ public class WorkerThread extends Thread {
 		final String ack = "ack_id=" + ackNum;
 		payload = ack + "," + payload;
 		
+		System.out.println("Server WorkerThread -- "+"send: "+payload); 
+
 		final DatagramPacket txPacket = new DatagramPacket(payload.getBytes(),
 				payload.length(), address, port);
 		
@@ -128,6 +130,8 @@ public class WorkerThread extends Thread {
 			id = (int) (Math.random() * Server.RANDOM_NUM_RANGE );
 		} while (Server.clientIDtoEndpoint.containsKey(id));
 		
+		System.out.println("Server WorkerThread -- "+"onConnect created ID: "
+						+ id); 
 		// map the id to the client object 
 		Server.clientIDtoEndpoint.put(id, tempClientEndPoint);
 		
@@ -139,7 +143,7 @@ public class WorkerThread extends Thread {
 			e.printStackTrace();
 		}
 		
-		
+		System.out.println("Server WorkerThread -- "+"onConnect, checking match"); 
 		// check if there's a match, if so, match them
 		// if not add the client to appropriate waiting group
 		if (gender.equals("F")){
@@ -147,7 +151,7 @@ public class WorkerThread extends Thread {
 				if (Server.maleIntoFemale.isEmpty()){
 					// no match now
 					Server.femaleIntoMale.add(id);
-				} else {
+				} else {			
 					// delete one from the matching waiting queues
 					int idMatched = Server.maleIntoFemale.get(0);
 					Server.maleIntoFemale.remove(0);
@@ -156,7 +160,7 @@ public class WorkerThread extends Thread {
 			} else { 				// Female into female				
 				if (Server.femaleIntoFemale.isEmpty()){
 					// no match now
-					Server.femaleIntoMale.add(id);
+					Server.femaleIntoFemale.add(id);
 				} else {
 					// delete one from the matching waiting queues
 					int idMatched = Server.femaleIntoFemale.get(0);
@@ -169,10 +173,14 @@ public class WorkerThread extends Thread {
 				if (Server.maleIntoMale.isEmpty()){
 					// no match now
 					Server.maleIntoMale.add(id);
+					System.out.println("Server WorkerThread -- "+
+							"onConnect, put "+id+" into MM");
 				} else {
 					// delete one from the matching waiting queues
 					int idMatched = Server.maleIntoMale.get(0);
 					Server.maleIntoMale.remove(0);
+					System.out.println("Server WorkerThread -- "+
+								"onConnect, matching "+id+" , "+idMatched); 
 					match(id, idMatched);
 				}
 			} else {				// Male into female
@@ -192,6 +200,9 @@ public class WorkerThread extends Thread {
 	}
 	
 	private void match(int client1, int client2){
+		System.out.println("Server WorkerThread -- matching"); 
+
+		
 		Server.clientIDtoClientID.put(client1, client2);
 		Server.clientIDtoClientID2.put(client2, client1);
 		

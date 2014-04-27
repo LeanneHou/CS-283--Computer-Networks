@@ -31,7 +31,9 @@ public class MyBoundService extends Service{
 	Messenger myMessenger;
 	int clientID;
 
+	//String serverAddress = "127.0.0.1";
 	String serverAddress = "54.187.122.58";
+	
 	int serverPort = 20000;
 	public static final int MAX_PACKET_SIZE = 512;
 	public static final int RANDOM_NUM_RANGE = 1000;
@@ -59,16 +61,15 @@ public class MyBoundService extends Service{
 			// convert the rxPacket's payload to a string
 			String payload = new String(rxPacket.getData(), 0, rxPacket.getLength())
 							.trim();
-			Log.d("MyBoundService", "run: Got Payload: " + payload); 
+			Log.e("MyBoundService", "run: Got Payload: " + payload); 
 			
 			String[] parts = payload.split(",");
 			
 			if (parts[0].startsWith("ack_id=")) {
 				ack = Integer.parseInt(parts[0].split("=")[1]);
-				Log.d("MyBoundService", "Ack received: " + ack); 
+				Log.e("MyBoundService", "Ack received: " + ack); 
 				
 				if (parts[1].startsWith("id=")) {
-					
 					onConnect(ack, parts[1]);
 					return;
 				} else if (parts[1].startsWith("opponent_found")){
@@ -118,7 +119,7 @@ public class MyBoundService extends Service{
 		}
 		
 		private void onConnect(int ack, String payload) {	
-			Log.d("MyBoundService", "onConnect"); 
+			Log.e("MyBoundService", "onConnect"); 
 
 			send("received="+ ack +"\n", this.rxPacket.getAddress(),
 					this.rxPacket.getPort());
@@ -126,11 +127,11 @@ public class MyBoundService extends Service{
 			String temp= payload.split("=")[1]; // get client ID
 			clientID = Integer.parseInt(temp);
 			
-			Log.d("MyBoundService", "onConnect: ClientID received: " + clientID); 
+			Log.e("MyBoundService", "onConnect: ClientID received: " + clientID); 
 		}
 		
 		private void onOpponentFound(int ack) {
-			Log.d("MyBoundService", "onOpponentFound"); 
+			Log.e("MyBoundService", "onOpponentFound"); 
 			
 			send("received="+ ack +"\n", this.rxPacket.getAddress(),
 					this.rxPacket.getPort());
@@ -149,15 +150,12 @@ public class MyBoundService extends Service{
 			showNotification("Quit Conversation", "The converstaion stopped");
 		}
 		
-		private void onMsg(int ack, String msg) {
+		private void onMsg(int ack, String message) {
 			Log.d("MyBoundService", "On Msg"); 
 			
 			send("received="+ ack +"\n", this.rxPacket.getAddress(),
 					this.rxPacket.getPort());
-			
-			// parse the strings to get row and col number
-			String message = msg.split("=")[1];
-			
+						
 			// send the message to the main activity
 			Message m = Message.obtain();
 			m.what = MainActivity.GOT_MSG;
@@ -215,13 +213,17 @@ public class MyBoundService extends Service{
 		return myBinder;
 	}
 	
-	public void start() {
+	public void start(String str1, String str2) {
+		
+		final String myGender = str1;
+		final String preferredGender = str2;
 		
 		Thread t = new Thread() { 
 	        public void run() {
 	            try {		
 					Log.e("MyBoundService", "start"); 
 					socket = new DatagramSocket();
+					connect(myGender, preferredGender, socket);
 					
 					while (true) {
 						byte[] buf = new byte[MAX_PACKET_SIZE];
@@ -257,17 +259,19 @@ public class MyBoundService extends Service{
 	    
 	}
 	
-	public void connect(String str1, String str2) {
+	public void connect(final String str1, final String str2, final DatagramSocket socket) {
 		Log.e("MyBoundService", "connect"); 
-
-		final String myGender = str1;
-		final String preferredGender = str2;
+//
+//		final String myGender = str1;
+//		final String preferredGender = str2;
+//		Log.e("MyBoundService", "gender: "+myGender+" prefer: "+ preferredGender);
 		
 		Thread t = new Thread() { 
 	        public void run() {
 	            try {
-	            	String command = "connect," + myGender +
-	            			"," + preferredGender;
+	            	String command = "connect," + str1 +
+	            			"," + str2;
+	            	Log.e("MyBoundService","command: "+command);
 	    			DatagramPacket txPacket = new DatagramPacket(command.getBytes(),
 	    					command.length(), serverSocketAddress);
 	    			socket.send(txPacket);
@@ -311,7 +315,7 @@ public class MyBoundService extends Service{
 	            int ackNum = (int) (Math.random() * MyBoundService.RANDOM_NUM_RANGE );
 				String ack = "" + ackNum;
 				final String payload = "ack_id=" + ack + "," 
-							+ "clieng_id=" + clientID + str;
+							+ "client_id=" + clientID + ","+str;
 				Log.d("MyBoundService", "Send Message: " + payload); 
 				
 				Timer timer = new Timer();

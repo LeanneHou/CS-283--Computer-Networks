@@ -82,6 +82,7 @@ public class MainActivity extends Activity {
 		send = (Button) findViewById(R.id.button10);
 		find = (Button) findViewById(R.id.button1);
 		quit = (Button) findViewById(R.id.button2);
+		text = (EditText) findViewById(R.id.editText1);
 		imMale = (RadioButton) findViewById(R.id.radioButton1);
 		imFemale = (RadioButton) findViewById(R.id.radioButton2);
 		intoMale = (RadioButton) findViewById(R.id.radioButton3);
@@ -143,9 +144,8 @@ public class MainActivity extends Activity {
 				// TODO Auto-generated method stub
 				Log.d("MainActivity","find button clicked");
 				
-				myService.start();
+				myService.start(myGender, preferredGender);
 				Log.d("MainActivity","myService started");
-//				myService.connect(myGender, preferredGender);
 			}	
 		});	
 		
